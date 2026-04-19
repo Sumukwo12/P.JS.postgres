@@ -99,3 +99,14 @@ class Payment(Base):
     status                    = Column(String(50), default="pending", nullable=False)
     created_at                = Column(DateTime(timezone=True), server_default=func.now())
     order                     = relationship("Order", back_populates="payment")
+
+
+class Policy(Base):
+    __tablename__ = "policies"
+    id = Column(Integer, primary_key=True, index=True)
+    slug = Column(String(200), unique=True, nullable=False)
+    title = Column(String(200), nullable=False)
+    content = Column(Text, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    

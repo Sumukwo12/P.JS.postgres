@@ -91,3 +91,17 @@ class OrderOut(BaseModel):
 class MpesaSTKRequest(BaseModel):
     order_id: int
     phone:    str
+
+class PolicyCreate(BaseModel):
+    slug:    str
+    title:   str
+    content: str
+
+class PolicyOut(BaseModel):
+    id: int
+    slug: str
+    title: str
+    content: str
+    created_at: datetime
+    updated_at: datetime
+    model_config = {"from_attributes": True}

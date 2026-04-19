@@ -10,6 +10,11 @@ API.interceptors.request.use(config => {
   return config;
 });
 
+export const profileAPI = {
+  get: () => API.get('/profile'),
+  update: (d) => API.put('/profile', d),
+};
+
 export const authAPI = {
   register: (d) => API.post('/auth/register', d),
   login: (d) => API.post('/auth/login', d),
@@ -49,6 +54,14 @@ export const adminAPI = {
   users: () => API.get('/admin/users'),
   orders: () => API.get('/admin/orders'),
   updateStatus: (id, s) => API.put(`/admin/orders/${id}/status?status=${s}`),
+};
+
+export const policiesAPI = {
+  list: () => API.get('/policies'),
+  get: (slug) => API.get(`/policies/${slug}`),
+  create: (d) => API.post('/policies', d),
+  update: (id, d) => API.put(`/policies/${id}`, d),
+  delete: (id) => API.delete(`/policies/${id}`),
 };
 
 export default API;

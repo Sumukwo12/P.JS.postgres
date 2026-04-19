@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react';
 import {
   Users, ShoppingBag, Package, TrendingUp, Edit2, Trash2,
   Plus, X, Loader, Lock, Eye, EyeOff, LogOut, ChevronDown,
-  ImagePlus, Tag, FileText, Hash, Layers, Monitor, FileUp, Download, Settings, ListPlus
+  ImagePlus, Tag, FileText, Hash, Layers, Monitor, FileUp, Download, Settings, ListPlus, Shield
 } from 'lucide-react';
-import { adminAPI, productsAPI, authAPI } from '../utils/api';
+import { adminAPI, productsAPI, authAPI, policiesAPI } from '../utils/api';
 
 const STATUS_OPTIONS = ['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'];
 
@@ -395,6 +395,88 @@ function BulkImportModal({ onSave, onClose }) {
   );
 }
 
+// ─── Policy Form Modal ────────────────────────────────────────────────────────
+function PolicyFormModal({ policy, onSave, onClose }) {
+  const [form, setForm] = useState({
+    slug:    policy?.slug || '',
+    title:   policy?.title || '',
+    content: policy?.content || '',
+  });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSaving(true); setError('');
+    try {
+      if (policy) {
+        const { data } = await policiesAPI.update(policy.id, form);
+        onSave(data, 'update');
+      } else {
+        const { data } = await policiesAPI.create(form);
+        onSave(data, 'create');
+      }
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to save policy.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-dark-900/85 backdrop-blur-sm">
+      <div className="bg-dark-800 border border-white/10 rounded-2xl w-full max-w-lg shadow-2xl">
+        <div className="flex items-center justify-between p-6 border-b border-white/8">
+          <div>
+            <h3 className="text-white font-semibold">{policy ? 'Edit Policy' : 'Add New Policy'}</h3>
+            <p className="text-gray-500 text-xs">Manage your store's legal and info documents</p>
+          </div>
+          <button onClick={onClose} className="p-2 text-gray-500 hover:text-white"><X size={18} /></button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          <div>
+            <label className="block text-gray-400 text-xs font-medium mb-1.5 uppercase tracking-wider">Title *</label>
+            <input
+              required value={form.title} onChange={e => set('title', e.target.value)}
+              placeholder="e.g. Refund Policy"
+              className="w-full bg-dark-700/60 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:border-brand-400/60 outline-none"
+            />
+          </div>
+          <div>
+            <label className="block text-gray-400 text-xs font-medium mb-1.5 uppercase tracking-wider">URL Slug *</label>
+            <input
+              required value={form.slug} onChange={e => set('slug', e.target.value.toLowerCase().replace(/\s+/g, '-'))}
+              placeholder="e.g. refund-policy"
+              className="w-full bg-dark-700/60 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:border-brand-400/60 outline-none"
+            />
+          </div>
+          <div>
+            <label className="block text-gray-400 text-xs font-medium mb-1.5 uppercase tracking-wider">Content *</label>
+            <textarea
+              required value={form.content} onChange={e => set('content', e.target.value)}
+              placeholder="Write your policy text here..."
+              rows={8}
+              className="w-full bg-dark-700/60 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:border-brand-400/60 outline-none resize-none leading-relaxed"
+            />
+          </div>
+
+          {error && <div className="text-red-400 text-xs">{error}</div>}
+
+          <div className="flex gap-3 pt-2">
+            <button type="button" onClick={onClose} className="flex-1 bg-white/5 text-gray-300 py-3 rounded-xl font-medium">Cancel</button>
+            <button type="submit" disabled={saving} className="flex-1 bg-brand-500 text-white py-3 rounded-xl font-bold disabled:opacity-50">
+              {saving ? <Loader className="animate-spin mx-auto" size={18} /> : (policy ? 'Update' : 'Create')}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 // ─── Dashboard ───────────────────────────────────────────────────────────────
 export default function AdminPage() {
   const [adminUser, setAdminUser] = useState(() => { try { const s = localStorage.getItem('admin_user'); return s ? JSON.parse(s) : null; } catch { return null; } });
@@ -408,6 +490,9 @@ export default function AdminPage() {
   const [showForm, setShowForm] = useState(false);
   const [showBulk, setShowBulk] = useState(false);
   const [editProd, setEditProd] = useState(null);
+  const [policies, setPolicies] = useState([]);
+  const [editPolicy, setEditPolicy] = useState(null);
+  const [showPolicyForm, setShowPolicyForm] = useState(false);
   const [filterCat, setFilterCat] = useState('');
   const [searchQ, setSearchQ] = useState('');
   const [notice, setNotice] = useState('');
@@ -419,10 +504,10 @@ export default function AdminPage() {
     if (!adminUser) return;
     (async () => {
       try {
-        const [s, o, p, u, c] = await Promise.all([
-          adminAPI.stats(), adminAPI.orders(), productsAPI.list(), adminAPI.users(), productsAPI.categories()
+        const [s, o, p, u, c, pol] = await Promise.all([
+          adminAPI.stats(), adminAPI.orders(), productsAPI.list(), adminAPI.users(), productsAPI.categories(), policiesAPI.list()
         ]);
-        setStats(s.data); setOrders(o.data); setProducts(p.data); setUsers(u.data); setCategories(c.data);
+        setStats(s.data); setOrders(o.data); setProducts(p.data); setUsers(u.data); setCategories(c.data); setPolicies(pol.data);
       } catch {
         setStats({ total_users: 42, total_orders: 128, total_products: 16, total_revenue: 4580000 });
         setCategories([
@@ -465,6 +550,26 @@ export default function AdminPage() {
     } catch { notify('❌ Failed to update status.'); }
   };
 
+  const handlePolicySaved = (saved, action) => {
+    if (action === 'create') {
+      setPolicies(p => [saved, ...p]);
+      notify(`✅ "${saved.title}" created.`);
+    } else {
+      setPolicies(p => p.map(x => x.id === saved.id ? saved : x));
+      notify(`✅ "${saved.title}" updated.`);
+    }
+    setShowPolicyForm(false); setEditPolicy(null);
+  };
+
+  const handleDeletePolicy = async (id, title) => {
+    if (!window.confirm(`Delete policy "${title}"?`)) return;
+    try {
+      await policiesAPI.delete(id);
+      setPolicies(p => p.filter(x => x.id !== id));
+      notify(`🗑️ Deleted "${title}".`);
+    } catch { notify('❌ Failed to delete policy.'); }
+  };
+
   const filtered = products.filter(p => {
     const catId = p.category?.id?.toString() || p.category_id?.toString();
     return (!filterCat || catId === filterCat) && (!searchQ || p.name.toLowerCase().includes(searchQ.toLowerCase()));
@@ -495,7 +600,7 @@ export default function AdminPage() {
 
         {/* Tabs */}
         <div className="flex gap-1 mb-8 bg-dark-800/50 p-1 rounded-xl w-fit border border-white/8">
-          {['overview', 'products', 'orders', 'users', 'hero'].map(t => (
+          {['overview', 'products', 'orders', 'users', 'hero', 'policies'].map(t => (
             <button key={t} onClick={() => setTab(t)} className={`px-5 py-2 rounded-lg text-sm font-medium capitalize transition-all ${tab === t ? 'bg-brand-500 text-white shadow-lg shadow-brand-500/20' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}>{t}</button>
           ))}
         </div>
@@ -755,7 +860,56 @@ export default function AdminPage() {
             </div>
           </div>
         )}
+
+        {/* Policies */}
+        {tab === 'policies' && (
+          <div>
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-white font-bold text-lg">Manage Store Policies</h3>
+              <button onClick={() => { setEditPolicy(null); setShowPolicyForm(true); }} className="bg-brand-500 hover:bg-brand-400 text-white px-4 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-2">
+                <Plus size={16} /> New Policy
+              </button>
+            </div>
+            
+            <div className="bg-dark-800/40 border border-white/8 rounded-2xl overflow-hidden">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-white/8">
+                    {['Title', 'Slug', 'Last Updated', 'Actions'].map(h => (
+                      <th key={h} className="text-left text-gray-500 text-xs font-medium uppercase tracking-wider px-6 py-4">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                  {policies.length === 0 ? (
+                    <tr><td colSpan={4} className="text-center py-10 text-gray-600">No policies found. Create one to get started.</td></tr>
+                  ) : policies.map(p => (
+                    <tr key={p.id} className="hover:bg-white/2 transition-colors">
+                      <td className="px-6 py-4 font-medium text-white">{p.title}</td>
+                      <td className="px-6 py-4 text-gray-400 text-sm">{p.slug}</td>
+                      <td className="px-6 py-4 text-gray-500 text-xs">{new Date(p.updated_at).toLocaleDateString()}</td>
+                      <td className="px-6 py-4">
+                        <div className="flex gap-2">
+                          <button onClick={() => { setEditPolicy(p); setShowPolicyForm(true); }} className="p-2 text-gray-400 hover:text-brand-400 transition-colors"><Edit2 size={16} /></button>
+                          <button onClick={() => handleDeletePolicy(p.id, p.title)} className="p-2 text-gray-400 hover:text-red-400 transition-colors"><Trash2 size={16} /></button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </div>
+
+      {showPolicyForm && (
+        <PolicyFormModal
+          policy={editPolicy}
+          onSave={handlePolicySaved}
+          onClose={() => { setShowPolicyForm(false); setEditPolicy(null); }}
+        />
+      )}
 
       {showForm && (
         <ProductFormModal

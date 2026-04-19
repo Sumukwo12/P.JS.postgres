@@ -3,7 +3,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from database import engine, Base
 import models  # registers all ORM classes with Base
-from routers import auth, products, cart, orders, payment, admin
+from routers import auth, products, cart, orders, payment, admin, policies
 
 # Create all tables automatically — no migration commands needed
 Base.metadata.create_all(bind=engine)
@@ -29,6 +29,7 @@ app.include_router(cart.router,     prefix="/cart",     tags=["Cart"])
 app.include_router(orders.router,   prefix="/orders",   tags=["Orders"])
 app.include_router(payment.router,  prefix="/payment",  tags=["Payment"])
 app.include_router(admin.router,    prefix="/admin",    tags=["Admin"])
+app.include_router(policies.router, prefix="/policies", tags=["Policies"])
 
 # Serve static files (uploads)
 app.mount("/static", StaticFiles(directory="static"), name="static")
