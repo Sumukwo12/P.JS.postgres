@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f97316" />
+    <meta name="description" content="ShopKenya - Kenya's Premier E-Commerce Platform" />
+    <title>ShopKenya</title>
+    <style>
+      @media (hover: hover) and (pointer: fine) {
+        * { cursor: none !important; }
+        #cursor-dot {
+          width:10px;height:10px;background:#f97316;border-radius:50%;
+          position:fixed;top:0;left:0;pointer-events:none;z-index:9999;
+          transform:translate(-50%,-50%);transition:transform 0.12s;mix-blend-mode:screen;
+        }
+        #cursor-ring {
+          width:36px;height:36px;border:1.5px solid rgba(249,115,22,0.55);
+          border-radius:50%;position:fixed;top:0;left:0;pointer-events:none;z-index:9998;
+          transform:translate(-50%,-50%);transition:width 0.2s,height 0.2s,border-color 0.2s;
+        }
+        #cursor-dot.hov{transform:translate(-50%,-50%) scale(2.5);background:#fb923c;}
+        #cursor-ring.hov{width:50px;height:50px;border-color:rgba(249,115,22,0.9);}
+        #cursor-dot.clk{transform:translate(-50%,-50%) scale(0.5);}
+      }
+      @keyframes touchPop{from{transform:scale(0);opacity:.6}to{transform:scale(7);opacity:0}}
+    </style>
+  </head>
+  <body>
+    <div id="cursor-dot"></div>
+    <div id="cursor-ring"></div>
+    <div id="root"></div>
+    <script>
+      (function(){
+        var dot=document.getElementById('cursor-dot'),ring=document.getElementById('cursor-ring');
+        var cx=0,cy=0,rx=0,ry=0;
+        var ok=window.matchMedia('(hover:hover) and (pointer:fine)').matches;
+        if(!ok){dot.style.display='none';ring.style.display='none';return;}
+        document.addEventListener('mousemove',function(e){
+          cx=e.clientX;cy=e.clientY;
+          dot.style.left=cx+'px';dot.style.top=cy+'px';
+        });
+        (function loop(){rx+=(cx-rx)*0.11;ry+=(cy-ry)*0.11;
+          ring.style.left=rx+'px';ring.style.top=ry+'px';requestAnimationFrame(loop);})();
+        document.addEventListener('mouseover',function(e){
+          if(e.target.closest('button,a,input,select,textarea')){dot.classList.add('hov');ring.classList.add('hov');}
+        });
+        document.addEventListener('mouseout',function(e){
+          if(e.target.closest('button,a,input,select,textarea')){dot.classList.remove('hov');ring.classList.remove('hov');}
+        });
+        document.addEventListener('mousedown',function(){dot.classList.add('clk');});
+        document.addEventListener('mouseup',function(){dot.classList.remove('clk');});
+        document.addEventListener('touchstart',function(e){
+          var t=e.touches[0],el=document.createElement('div');
+          el.style.cssText='position:fixed;left:'+t.clientX+'px;top:'+t.clientY+'px;width:22px;height:22px;margin:-11px 0 0 -11px;border-radius:50%;background:rgba(249,115,22,.3);pointer-events:none;z-index:9997;animation:touchPop .5s ease-out forwards;';
+          document.body.appendChild(el);setTimeout(function(){el.remove();},550);
+        },{passive:true});
+      })();
+    </script>
+  </body>
+</html>
