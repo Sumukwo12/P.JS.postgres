@@ -15,7 +15,7 @@ CREATE DATABASE shopkenya;
 ```
 Your `.env` is already set with:
 ```
-DATABASE_URL=postgresql://postgres:sumuu@localhost:5432/shopkenya
+DATABASE_URL=postgresql://postgres:@localhost:5432/shopkenya
 ```
 If your postgres password is different, edit `backend/.env`.
 
@@ -55,19 +55,10 @@ The first categories (Electronics, Fashion, etc.) are created automatically.
 
 ---
 
-## Step 5 — Make Yourself Admin (optional)
-
-After registering, double-click **`backend/make_admin.bat`** and enter your email.
-
-Then log in at http://localhost:3000/admin to manage products and orders.
-
----
 
 ## Troubleshooting
 
 ### `uvicorn not recognized`
-Always start via `start_backend.bat` which uses `python -m uvicorn` internally.
-Or run manually:
 ```powershell
 cd backend
 python -m venv venv
